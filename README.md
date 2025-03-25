@@ -1,36 +1,83 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+ Dynamic Tools Project
+ A Dynamic, Feature-Packed App with 17 Powerful Tools 
+This project showcases my skills with a slick Next.js frontend and a robust Express.js backend, complete with PostgreSQL integration. Built from scratch to impress and deliver!  
+ Features
+ Dynamic Rendering: Powered by Next.js for a smooth frontend experience.  
 
-## Getting Started
+ Backend Muscle: Express.js handles the heavy lifting with a RESTful API.  
 
-First, run the development server:
+ Database: PostgreSQL for reliable data storage and management.  
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+ 17 Unique Tools:  
+windowlevel | pan | stackscroll | zoom | magnify  
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+length | planarrotate | circleroi | reactangelroi | height  
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+probe | angle | dragprobe | cobbangle | etdrsgrid  
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+splineroi | arrowanotate | mpr | play
 
-## Learn More
+ How to Run Locally
+Clone it, set it up, and see the magic happen! Here’s how:  
+Frontend (Next.js)
+Clone the Repo  
+bash
 
-To learn more about Next.js, take a look at the following resources:
+git clone https://github.com/your-username/dynamic-tools-project.git
+cd dynamic-tools-project/frontend
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Install Dependencies  
+bash
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+npm install
 
-## Deploy on Vercel
+Build & Run  
+bash
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+npm run build
+npm start
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Open http://localhost:3000 in your browser! 
+
+Backend (Express.js)
+Navigate to Backend  
+bash
+
+cd dynamic-tools-project/backend
+
+Install Dependencies  
+bash
+
+npm install
+
+Set Environment Variables
+Create a .env file and add:  
+
+DATABASE_URL=your_postgres_url
+PORT=3000
+
+Run the Server  
+bash
+
+npm start
+
+Test the API at http://localhost:3000! 
+
+ Tech Stack
+Frontend: Next.js, React  
+
+Backend: Express.js, Node.js  
+
+Database: PostgreSQL  
+
+Extras: Multer (file uploads), CORS, Morgan
+
+ Live Demo
+ Frontend: https://your-project.vercel.app
+ Backend API: https://your-backend.onrender.com
+(Links coming soon after deployment!)  
+ Want to Contribute?
+Found a bug? Got a cool idea? Feel free to fork this repo and send a PR! Let’s make it even better together.  
+ Show Some Love
+If you like what you see, give this repo a star! It’s my pride and joy, built to showcase my skills to the world.  
+

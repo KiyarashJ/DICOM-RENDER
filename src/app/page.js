@@ -1,95 +1,118 @@
-import Image from "next/image";
-import styles from "./page.module.css";
+"use client";
+import { motion } from "framer-motion";
+import style from "./page.module.css";
+import styles from "./Files/page.module.css";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { toast, ToastContainer } from "react-toastify";
+
 
 export default function Home() {
-  return (
-    <div className={styles.page}>
-      <main className={styles.main}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol>
-          <li>
-            Get started by editing <code>src/app/page.js</code>.
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+  const router = useRouter();
+  const [selectedFiles, setSelectedFiles] = useState(null);
 
-        <div className={styles.ctas}>
-          <a
-            className={styles.primary}
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+  function handleDragOver(e) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "copy";
+  }
+
+  async function handleDrop(e) {
+    e.preventDefault();
+    const files = e.dataTransfer.files;
+    if (files.length === 0) {
+      console.log("No files dropped!");
+      return;
+    }
+
+    setSelectedFiles(files);
+    const formData = new FormData();
+    for (const file of files) {
+      formData.append("files", file);
+    }
+
+    try {
+      const response = await fetch("http://localhost:3000/dicom/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.ok) throw new Error("Upload failed");
+
+      const seriesInstance = response.headers.get("fileName");
+      const metadata = JSON.parse(response.headers.get("X-Metadata"));
+      const filePaths = metadata.map(item => item.filePath);
+
+      const reader = response.body.getReader();
+      let receivedData = [];
+      let fileBlobs = [];
+
+      const readStream = async ({ done, value }) => {
+        if (done) {
+          localStorage.setItem("dicomFilePaths", JSON.stringify(filePaths));
+          toast("Uploaded successfully!");
+          setTimeout(() => router.push(`/Files/${seriesInstance}`), 3000);
+          return;
+        }
+
+        receivedData = receivedData.concat(Array.from(value));
+        const separator = "---FILE_SEPARATOR---".split('').map(c => c.charCodeAt(0));
+        const separatorIndex = receivedData.findIndex((_, i) =>
+          receivedData.slice(i, i + separator.length).every((v, j) => v === separator[j])
+        );
+
+        if (separatorIndex !== -1) {
+          const fileData = receivedData.slice(0, separatorIndex);
+          const blob = new Blob([Uint8Array.from(fileData)], { type: "application/dicom" });
+          fileBlobs.push(blob);
+          receivedData = receivedData.slice(separatorIndex + separator.length);
+        }
+
+        reader.read().then(readStream);
+      };
+
+      reader.read().then(readStream);
+    } catch (error) {
+      console.error("Upload error:", error);
+      toast.error("Upload failed, try again!");
+    }
+  }
+
+  return (
+    <>
+      <motion.div
+        className={style.body}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 1, delay: 0.5 }}
+      >
+        <motion.h1
+          initial={{ opacity: 0 }}
+          transition={{ duration: 1, delay: 1 }}
+          animate={{ opacity: 1 }}
+          className={styles.title}
+        >
+          Kj Medical Dicom File Rendering :
+        </motion.h1>
+        <div className={style.BOXCon}>
+          <div
+            className={style.divClass}
+            onDragOver={handleDragOver}
+            onDrop={handleDrop}
           >
-            <Image
-              className={styles.logo}
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-            className={styles.secondary}
-          >
-            Read our docs
-          </a>
+            <h1 className={style.pr}>Drop files here</h1>
+          </div>
         </div>
-      </main>
-      <footer className={styles.footer}>
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+      </motion.div>
+      {selectedFiles && (
+        <ToastContainer
+          position="bottom-center"
+          progressClassName="fancy-progress-bar"
+          toastStyle={{ background: "conic-gradient(#168aad, #06d6a0, #d9ed92)", color: "#000" }}
+          autoClose={3000}
+        />
+      )}
+    </>
   );
 }
+
+

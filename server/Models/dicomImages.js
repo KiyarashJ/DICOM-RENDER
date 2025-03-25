@@ -1,0 +1,115 @@
+const db = require('../postgresConnection')
+    sequelize = db.sequelize
+    Sequelize = db.Sequelize
+
+const dicomImages = sequelize.define('dicomImages', {
+    SOPInstance: {
+        type: Sequelize.DataTypes.STRING,
+        allowNull: false, 
+    } ,
+    SOPClassUI: {
+        type: Sequelize.DataTypes.STRING,
+        allowNull: false
+    } ,
+    ImageNum: {
+        type: Sequelize.DataTypes.INTEGER,
+        allowNull: true
+    } ,
+    ImageTime: {
+        type: Sequelize.DataTypes.STRING,
+        allowNull: false
+    } ,
+    EchoNumber: {
+        type: Sequelize.DataTypes.STRING,
+        allowNull: true
+    } ,
+    NumberOfFr: {
+        type: Sequelize.DataTypes.STRING,
+        allowNull: true
+    } ,
+    AcqDate: {
+        type: Sequelize.DataTypes.DATE,
+        defaultValue: Sequelize.DataTypes.NOW,
+        allowNull: false
+    } ,
+    AcqTime: {
+        type: Sequelize.DataTypes.DATE,
+        defaultValue: Sequelize.DataTypes.NOW,
+        allowNull: true
+    } ,
+    ReceivingC: {
+        type: Sequelize.DataTypes.STRING,
+        allowNull: true
+    } ,
+    AcqNumber: {
+        type: Sequelize.DataTypes.INTEGER,
+        allowNull: false
+    } ,
+    SliceLocat: {
+        type: Sequelize.DataTypes.STRING,
+        allowNull: true
+    } ,
+    SamplesPer: {
+        type: Sequelize.DataTypes.INTEGER,
+        allowNull: true
+    } ,
+    PhotoMetri: {
+        type: Sequelize.DataTypes.STRING,
+        allowNull: false
+    } ,
+    Rows: {
+        type: Sequelize.DataTypes.INTEGER,
+        allowNull: false
+    } ,
+    Columns: {
+        type: Sequelize.DataTypes.INTEGER,
+        allowNull: false
+    } ,
+    BitsStored: {
+        type: Sequelize.DataTypes.INTEGER,
+        allowNull: false
+    } ,
+    ImageType: {
+        type: Sequelize.DataTypes.STRING,
+        allowNull: false
+    } ,
+    ImageID: {
+        type: Sequelize.DataTypes.INTEGER,
+        allowNull: true
+    } ,
+    ImagePat: {
+        type: Sequelize.DataTypes.STRING,
+        allowNull: true
+    } ,
+    SeriesInstance: {
+        type: Sequelize.DataTypes.STRING,
+        allowNull: false
+    } ,
+    AccessTime: {
+        type: Sequelize.DataTypes.STRING,
+        allowNull: false
+    } ,
+    qFlags: {
+        type: Sequelize.DataTypes.STRING,
+        allowNull: true
+    } ,
+    qSpare: {
+        type: Sequelize.DataTypes.STRING,
+        allowNull: true
+    } ,
+    ObjectFile: {
+        type: Sequelize.DataTypes.STRING,
+        allowNull: false
+    } ,
+    DeviceName: {
+        type: Sequelize.DataTypes.STRING,
+        allowNull: false
+    }
+}, {
+    timestamps: true,
+    freezeTableName: true,
+    tabelName: true
+})
+
+
+module.exports = dicomImages;

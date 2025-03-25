@@ -9,13 +9,26 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@cornerstonejs/core": "^3.7.8",
+    "@cornerstonejs/dicom-image-loader": "^3.7.8",
+    "@cornerstonejs/nifti-volume-loader": "^3.7.8",
+    "@cornerstonejs/streaming-image-volume-loader": "^1.86.1",
+    "@cornerstonejs/tools": "^3.7.8",
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.0",
+    "@icr/polyseg-wasm": "^0.4.0",
+    "@mui/material": "^6.4.8",
+    "dicomweb-client": "^0.11.1",
+    "framer-motion": "^12.5.0",
+    "next": "15.2.4",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "next": "15.2.4"
+    "react-toastify": "^11.0.5"
   },
   "devDependencies": {
+    "@eslint/eslintrc": "^3",
     "eslint": "^9",
     "eslint-config-next": "15.2.4",
-    "@eslint/eslintrc": "^3"
+    "gh-pages": "^6.3.0"
   }
 }

@@ -42,7 +42,3 @@ next-env.d.ts
 
 # node modules
 node_modules/
-
-#files
-app.js
-server.js

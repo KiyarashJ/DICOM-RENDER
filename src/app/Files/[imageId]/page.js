@@ -1,970 +1,13 @@
-// ========================>                    THIS IS STABLE CODE FOR MY FREELANCE AND MUST BE BUILT OTHER VERSION TO COMPANY PROJECT ===================================
-
-
-
-
-
-
-
-
-
-
-
-// "use client";
-// import { useParams } from "next/navigation";
-// import { useEffect, useRef, useState, useMemo } from "react";
-// import { RenderingEngine, Enums } from "@cornerstonejs/core";
-// import { init as csRenderInit } from "@cornerstonejs/core";
-// import { init as dicomImageLoaderInit } from "@cornerstonejs/dicom-image-loader";
-// import { init as csToolsInit, ToolGroupManager } from "@cornerstonejs/tools";
-// import * as csTools3d from "@cornerstonejs/tools";
-// import Image from "next/image";
-// import styles from "./../page.module.css";
-// import {
-//   WindowLevelTool,
-//   PanTool,
-//   StackScrollTool,
-//   ZoomTool,
-//   MagnifyTool,
-//   LengthTool,
-//   PlanarRotateTool,
-//   CircleROITool,
-//   RectangleROITool,
-//   HeightTool,
-//   ProbeTool,
-//   AngleTool,
-//   DragProbeTool,
-//   CobbAngleTool,
-//   ETDRSGridTool,
-//   SplineROITool,
-//   ArrowAnnotateTool,
-// } from "@cornerstonejs/tools";
-
-
-
-// class PlayTool extends csTools3d.BaseTool {
-//   constructor() {
-//     super({
-//       toolName: "PlayTool",
-//     });
-//   }
-
-//   playStack(viewport, imageIds) {
-//     let index = 0;
-//     const playInterval = setInterval(() => {
-//       if (index >= imageIds.length) index = 0;
-//       viewport.setStack(imageIds, index);
-//       viewport.render();
-//       index++;
-//     }, 500);
-//     return () => clearInterval(playInterval);
-//   }
-
-//   mouseDownActivate(evt) {
-//     const viewport = evt.detail.viewport;
-//     const imageIds = viewport.getImageIds();
-//     const stopPlay = this.playStack(viewport, imageIds);
-//     setTimeout(stopPlay, 10000);
-//   }
-// }
-
-// let isCornerstoneInitialized = false;
-
-// async function CornerstoneLibInitialize() {
-//   if (!isCornerstoneInitialized) {
-//     await csRenderInit();
-//     await dicomImageLoaderInit();
-//     await csToolsInit();
-//     isCornerstoneInitialized = true;
-//   }
-// }
-
-// async function getDicomPreview(file, renderingEngine, tempElement) {
-//   try {
-//     await CornerstoneLibInitialize();
-
-//     const viewportId = "previewViewport";
-//     const viewportInput = {
-//       viewportId,
-//       type: Enums.ViewportType.STACK,
-//       element: tempElement,
-//     };
-
-//     if (!renderingEngine.getViewport(viewportId)) {
-//       renderingEngine.enableElement(viewportInput);
-//     }
-
-//     const viewport = renderingEngine.getViewport(viewportId);
-//     if (!viewport) throw new Error("Viewport not initialized");
-
-//     console.log(`Rendering preview for ${file.id} with URL: ${file.url}`);
-//     const imageId = `wadouri:${file.url}`;
-//     await viewport.setStack([imageId], 0);
-//     viewport.render();
-
-//     await new Promise((resolve) => setTimeout(resolve, 100));
-
-//     const canvas = tempElement.querySelector("canvas");
-//     if (!canvas || canvas.width === 0 || canvas.height === 0) {
-//       throw new Error("Canvas not properly initialized or has zero size");
-//     }
-
-//     const fullCanvas = document.createElement("canvas");
-//     fullCanvas.width = canvas.width;
-//     fullCanvas.height = canvas.height;
-//     const fullCtx = fullCanvas.getContext("2d");
-//     fullCtx.drawImage(canvas, 0, 0);
-
-//     const previewCanvas = document.createElement("canvas");
-//     previewCanvas.width = 100;
-//     previewCanvas.height = 100;
-//     const previewCtx = previewCanvas.getContext("2d");
-//     previewCtx.fillStyle = "black";
-//     previewCtx.fillRect(0, 0, 100, 100);
-
-//     const scaleFactor = Math.min(100 / canvas.width, 100 / canvas.height);
-//     const scaledWidth = canvas.width * scaleFactor;
-//     const scaledHeight = canvas.height * scaleFactor;
-//     const x = (100 - scaledWidth) / 2;
-//     const y = (100 - scaledHeight) / 2;
-
-//     previewCtx.drawImage(fullCanvas, 0, 0, canvas.width, canvas.height, x, y, scaledWidth, scaledHeight);
-
-//     const previewUrl = previewCanvas.toDataURL();
-
-//     console.log(`Preview generated for ${file.id}: ${previewUrl ? "Success" : "Failed"}`);
-//     return previewUrl;
-//   } catch (error) {
-//     console.error("Error generating preview for", file.id, error);
-//     return null;
-//   }
-// }
-
-// async function renderDicomImage(element, imageIds, selectedIndex, renderingEngine) {
-//   const viewportId = "CT_VIEWPORT";
-
-//   await CornerstoneLibInitialize();
-
-//   const viewportInput = {
-//     viewportId,
-//     type: Enums.ViewportType.STACK,
-//     element,
-//   };
-
-//   if (!renderingEngine.getViewport(viewportId)) {
-//     renderingEngine.enableElement(viewportInput);
-//   }
-
-//   const viewport = renderingEngine.getViewport(viewportId);
-//   viewport.setStack(imageIds, selectedIndex);
-//   viewport.render();
-
-//   return viewport;
-// }
-
-// export default function DicomViewerPage() {
-//   const params = useParams();
-//   const viewerRef = useRef(null);
-//   const ctToolGroupRef = useRef(null);
-//   const renderingEngineRef = useRef(null);
-//   const mainRenderingEngineRef = useRef(null);
-//   const tempElementRef = useRef(null);
-//   const [files, setFiles] = useState([]);
-//   const [selectedImageId, setSelectedImageId] = useState(null);
-//   const [tools, setTools] = useState([]);
-//   const [loading, setLoading] = useState(true);
-//   const [error, setError] = useState(null);
-//   const [visiblePreviews, setVisiblePreviews] = useState({});
-//   const [isPlaying, setIsPlaying] = useState(false); // حالت پخش اسلایدشو
-
-//   const cachedFiles = useMemo(() => {
-//     const cached = localStorage.getItem("dicomFilePaths");
-//     if (cached) {
-//       const filePaths = JSON.parse(cached);
-//       return filePaths.map((filePath, index) => ({
-//         id: `file-${index}`,
-//         path: filePath,
-//       }));
-//     }
-//     return [];
-//   }, []);
-
-//   useEffect(() => {
-//     const setupRenderingEngines = async () => {
-//       await CornerstoneLibInitialize();
-//       if (!renderingEngineRef.current) {
-//         renderingEngineRef.current = new RenderingEngine("previewEngine");
-//         tempElementRef.current = document.createElement("div");
-//         tempElementRef.current.style.position = "absolute";
-//         tempElementRef.current.style.visibility = "hidden";
-//         tempElementRef.current.style.width = "100px";
-//         tempElementRef.current.style.height = "100px";
-//         document.body.appendChild(tempElementRef.current);
-//       }
-//       if (!mainRenderingEngineRef.current) {
-//         mainRenderingEngineRef.current = new RenderingEngine("mainEngine");
-//       }
-//     };
-
-//     const loadFiles = async () => {
-//       try {
-//         setLoading(true);
-//         let fileList = cachedFiles;
-
-//         if (fileList.length === 0) {
-//           const filePaths = JSON.parse(localStorage.getItem("dicomFilePaths") || "[]");
-//           if (filePaths.length === 0) throw new Error("No files found");
-
-//           const filePromises = filePaths.map(async (filePath, index) => {
-//             const response = await fetch(`http://localhost:3000/dicom/file?path=${encodeURIComponent(filePath)}`);
-//             if (!response.ok) throw new Error("Failed to fetch file");
-//             const blob = await response.blob();
-//             return {
-//               id: `file-${index}`,
-//               url: URL.createObjectURL(blob),
-//               path: filePath,
-//             };
-//           });
-
-//           fileList = await Promise.all(filePromises);
-//         } else {
-//           const filePromises = fileList.map(async (file) => {
-//             const response = await fetch(`http://localhost:3000/dicom/file?path=${encodeURIComponent(file.path)}`);
-//             if (!response.ok) throw new Error("Failed to fetch file");
-//             const blob = await response.blob();
-//             return {
-//               ...file,
-//               url: URL.createObjectURL(blob),
-//             };
-//           });
-//           fileList = await Promise.all(filePromises);
-//         }
-
-//         console.log("Files loaded:", fileList);
-//         setFiles(fileList);
-
-//         await setupRenderingEngines();
-
-//         const processPreviewQueue = async () => {
-//           for (let i = 0; i < fileList.length; i++) {
-//             const file = fileList[i];
-//             const previewUrl = await getDicomPreview(file, renderingEngineRef.current, tempElementRef.current);
-//             if (previewUrl) {
-//               setFiles((prevFiles) =>
-//                 prevFiles.map((f) =>
-//                   f.id === file.id ? { ...f, previewUrl } : f
-//                 )
-//               );
-//               setVisiblePreviews((prev) => ({ ...prev, [file.id]: true }));
-//             } else {
-//               console.warn(`No preview generated for ${file.id}`);
-//             }
-//             await new Promise((resolve) => setTimeout(resolve, 3000));
-//           }
-//         };
-
-//         processPreviewQueue();
-
-//         setSelectedImageId(fileList.length > 0 ? fileList[0].id : null);
-//       } catch (err) {
-//         setError(err);
-//         console.error("Load error:", err);
-//       } finally {
-//         setLoading(false);
-//       }
-//     };
-
-//     loadFiles();
-
-//     return () => {
-//       if (renderingEngineRef.current) {
-//         renderingEngineRef.current.destroy();
-//         if (tempElementRef.current) document.body.removeChild(tempElementRef.current);
-//       }
-//       if (mainRenderingEngineRef.current) {
-//         mainRenderingEngineRef.current.destroy();
-//       }
-//     };
-//   }, [cachedFiles]);
-
-//   // اسلایدشو خودکار برای پیش‌نمایش‌ها
-//   useEffect(() => {
-//     let interval;
-//     if (isPlaying && files.length > 0) {
-//       interval = setInterval(() => {
-//         setSelectedImageId((prevId) => {
-//           const currentIndex = files.findIndex((f) => f.id === prevId);
-//           const nextIndex = (currentIndex + 1) % files.length; // چرخش بین فایل‌ها
-//           return files[nextIndex].id;
-//         });
-//       }, 500); // هر 2 ثانیه یه فایل جدید
-//     }
-//     return () => clearInterval(interval); // تمیز کردن موقع توقف
-//   }, [isPlaying, files]);
-
-//   useEffect(() => {
-//     if (selectedImageId && viewerRef.current && mainRenderingEngineRef.current) {
-//       const selectedIndex = files.findIndex((f) => f.id === selectedImageId);
-//       if (selectedIndex !== -1) {
-//         const imageIds = files.map((f) => `wadouri:${f.url}`);
-//         renderDicomImage(viewerRef.current, imageIds, selectedIndex, mainRenderingEngineRef.current).then((viewport) => {
-//           const tools = [
-//             WindowLevelTool,
-//             PanTool,
-//             StackScrollTool,
-//             ZoomTool,
-//             MagnifyTool,
-//             LengthTool,
-//             PlanarRotateTool,
-//             CircleROITool,
-//             RectangleROITool,
-//             HeightTool,
-//             ProbeTool,
-//             AngleTool,
-//             DragProbeTool,
-//             CobbAngleTool,
-//             ETDRSGridTool,
-//             SplineROITool,
-//             ArrowAnnotateTool,
-//             PlayTool,
-//           ];
-
-//           tools.forEach((tool) => csTools3d.addTool(tool));
-
-//           const toolGroupId = "ctToolGroup";
-//           let ctToolGroup = ToolGroupManager.getToolGroup(toolGroupId);
-
-//           if (!ctToolGroup) {
-//             ctToolGroup = ToolGroupManager.createToolGroup(toolGroupId);
-//             tools.forEach((tool) => ctToolGroup.addTool(tool.toolName));
-//             ctToolGroup.addViewport("CT_VIEWPORT", "mainEngine");
-//           } else {
-//             tools.forEach((tool) => ctToolGroup.setToolDisabled(tool.toolName));
-//           }
-
-//           setTools(tools);
-//           ctToolGroupRef.current = ctToolGroup;
-//           viewerRef.current.style.opacity = 1;
-//         });
-//       }
-//     }
-//   }, [selectedImageId, files]);
-
-//   const activateTool = (toolName) => {
-//     if (ctToolGroupRef.current) {
-//       tools.forEach((tool) => ctToolGroupRef.current.setToolDisabled(tool.toolName));
-//       if (toolName === "PlayTool") {
-//         ctToolGroupRef.current.setToolActive("PlayTool", {
-//           bindings: [{ mouseButton: csTools3d.Enums.MouseBindings.Primary }],
-//         });
-//       } else {
-//         ctToolGroupRef.current.setToolActive(toolName, {
-//           bindings: [{ mouseButton: csTools3d.Enums.MouseBindings.Primary }],
-//         });
-//       }
-//     }
-//   };
-
-//   // تابع تاگل Play/Stop
-//   const togglePlay = () => {
-//     setIsPlaying((prev) => !prev);
-//   };
-
-//   if (loading) return <div>Loading...</div>;
-//   if (error) return <div>Error: {error.message}</div>;
-
-//   return (
-//     <div className={styles.AllCon}>
-//       <aside className={styles.aside}>
-//         <h2>Files</h2>
-//         {files.map((file) => (
-//           <div
-//             key={file.id}
-//             onClick={() => setSelectedImageId(file.id)}
-//             className={`${styles.fileSelection} ${visiblePreviews[file.id] ? styles.visible : ''}`}
-//             style={{
-//               background: selectedImageId === file.id ? "conic-gradient(#168aad, #06d6a0, #d9ed92)" : "transparent",
-//             }}
-//           >
-//             {file.previewUrl && visiblePreviews[file.id] ? (
-//               <Image
-//                 src={file.previewUrl}
-//                 width={100}
-//                 height={100}
-//                 className={styles.preview}
-//                 alt={`Preview of ${file.id}`}
-//               />
-//             ) : (
-//               <div>Loading preview...</div>
-//             )}
-//           </div>
-//         ))}
-//       </aside>
-//       <div className={styles.buttonCon}>
-//         <h1 className={styles.title}>DICOM MEDICAL FILE:</h1>
-//         <div className={styles.tools}>
-//           {tools.map((tool) => (
-//             <button
-//               key={tool.toolName}
-//               onClick={() => activateTool(tool.toolName)}
-//               className={styles.btnTool}
-//             >
-//               {tool.toolName}
-//             </button>
-//           ))}
-//           <button
-//             onClick={togglePlay}
-//             className={styles.btnTool} 
-//           >
-//             {isPlaying ? "Stop" : "Play"}
-//           </button>
-//         </div>
-//         <div ref={viewerRef} className={styles.viewer} />
-//       </div>
-//     </div>
-//   );
-// }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// ===================================================== THIS CODE IS FOR TEST AND FOR MPR TESTING ==================================
-
-
-
-// "use client";
-// import { useParams } from "next/navigation";
-// import { useEffect, useRef, useState, useMemo } from "react";
-// import { RenderingEngine, Enums, volumeLoader } from "@cornerstonejs/core";
-// import { init as csRenderInit } from "@cornerstonejs/core";
-// import { init as dicomImageLoaderInit } from "@cornerstonejs/dicom-image-loader";
-// import { init as csToolsInit, ToolGroupManager } from "@cornerstonejs/tools";
-// import * as csTools3d from "@cornerstonejs/tools";
-// import Image from "next/image";
-// import styles from "./../page.module.css";
-// import {
-//   WindowLevelTool,
-//   PanTool,
-//   StackScrollTool,
-//   ZoomTool,
-//   MagnifyTool,
-//   LengthTool,
-//   PlanarRotateTool,
-//   CircleROITool,
-//   RectangleROITool,
-//   HeightTool,
-//   ProbeTool,
-//   AngleTool,
-//   DragProbeTool,
-//   CobbAngleTool,
-//   ETDRSGridTool,
-//   SplineROITool,
-//   ArrowAnnotateTool,
-//   CrosshairsTool,
-// } from "@cornerstonejs/tools";
-
-// class PlayTool extends csTools3d.BaseTool {
-//   constructor() {
-//     super({
-//       toolName: "PlayTool",
-//     });
-//   }
-
-//   playStack(viewport, imageIds) {
-//     let index = 0;
-//     const playInterval = setInterval(() => {
-//       if (index >= imageIds.length) index = 0;
-//       viewport.setStack(imageIds, index);
-//       viewport.render();
-//       index++;
-//     }, 500);
-//     return () => clearInterval(playInterval);
-//   }
-
-//   mouseDownActivate(evt) {
-//     const viewport = evt.detail.viewport;
-//     const imageIds = viewport.getImageIds();
-//     const stopPlay = this.playStack(viewport, imageIds);
-//     setTimeout(stopPlay, 10000);
-//   }
-// }
-
-// let isCornerstoneInitialized = false;
-
-// async function CornerstoneLibInitialize() {
-//   if (!isCornerstoneInitialized) {
-//     await csRenderInit();
-//     await dicomImageLoaderInit();
-//     await csToolsInit();
-//     isCornerstoneInitialized = true;
-//   }
-// }
-
-// async function getDicomPreview(file, renderingEngine, tempElement) {
-//   try {
-//     await CornerstoneLibInitialize();
-
-//     const viewportId = "previewViewport";
-//     const viewportInput = {
-//       viewportId,
-//       type: Enums.ViewportType.STACK,
-//       element: tempElement,
-//     };
-
-//     if (!renderingEngine.getViewport(viewportId)) {
-//       renderingEngine.enableElement(viewportInput);
-//     }
-
-//     const viewport = renderingEngine.getViewport(viewportId);
-//     if (!viewport) throw new Error("Viewport not initialized");
-
-//     console.log(`Rendering preview for ${file.id} with URL: ${file.url}`);
-//     const imageId = `wadouri:${file.url}`;
-//     await viewport.setStack([imageId], 0);
-//     viewport.render();
-
-//     await new Promise((resolve) => setTimeout(resolve, 100));
-
-//     const canvas = tempElement.querySelector("canvas");
-//     if (!canvas || canvas.width === 0 || canvas.height === 0) {
-//       throw new Error("Canvas not properly initialized or has zero size");
-//     }
-
-//     const fullCanvas = document.createElement("canvas");
-//     fullCanvas.width = canvas.width;
-//     fullCanvas.height = canvas.height;
-//     const fullCtx = fullCanvas.getContext("2d");
-//     fullCtx.drawImage(canvas, 0, 0);
-
-//     const previewCanvas = document.createElement("canvas");
-//     previewCanvas.width = 100;
-//     previewCanvas.height = 100;
-//     const previewCtx = previewCanvas.getContext("2d");
-//     previewCtx.fillStyle = "black";
-//     previewCtx.fillRect(0, 0, 100, 100);
-
-//     const scaleFactor = Math.min(100 / canvas.width, 100 / canvas.height);
-//     const scaledWidth = canvas.width * scaleFactor;
-//     const scaledHeight = canvas.height * scaleFactor;
-//     const x = (100 - scaledWidth) / 2;
-//     const y = (100 - scaledHeight) / 2;
-
-//     previewCtx.drawImage(fullCanvas, 0, 0, canvas.width, canvas.height, x, y, scaledWidth, scaledHeight);
-
-//     const previewUrl = previewCanvas.toDataURL();
-
-//     console.log(`Preview generated for ${file.id}: ${previewUrl ? "Success" : "Failed"}`);
-//     return previewUrl;
-//   } catch (error) {
-//     console.error("Error generating preview for", file.id, error);
-//     return null;
-//   }
-// }
-
-// async function renderDicomImage(elements, imageIds, selectedIndex, renderingEngine, isMPREnabled) {
-//   await CornerstoneLibInitialize();
-
-//   const viewportIds = {
-//     stack: "stackViewport",
-//     axial: "axialViewport",
-//     sagittal: "sagittalViewport",
-//     coronal: "coronalViewport",
-//   };
-
-//   if (isMPREnabled) {
-//     renderingEngine.setViewports([
-//       {
-//         viewportId: viewportIds.axial,
-//         type: Enums.ViewportType.ORTHOGRAPHIC,
-//         element: elements.axial,
-//         defaultOptions: { orientation: Enums.OrientationAxis.AXIAL, resolution: { width: 512, height: 512 }, antiAliasing: true },
-//       },
-//       {
-//         viewportId: viewportIds.sagittal,
-//         type: Enums.ViewportType.ORTHOGRAPHIC,
-//         element: elements.sagittal,
-//         defaultOptions: { orientation: Enums.OrientationAxis.SAGITTAL, resolution: { width: 512, height: 512 }, antiAliasing: true },
-//       },
-//       {
-//         viewportId: viewportIds.coronal,
-//         type: Enums.ViewportType.ORTHOGRAPHIC,
-//         element: elements.coronal,
-//         defaultOptions: { orientation: Enums.OrientationAxis.CORONAL, resolution: { width: 512, height: 512 }, antiAliasing: true },
-//       },
-//     ]);
-
-//     const volumeId = "myVolume";
-//     const volume = await volumeLoader.createAndCacheVolume(volumeId, { imageIds });
-
-//     Object.values(viewportIds).slice(1).forEach((viewportId) => {
-//       const viewport = renderingEngine.getViewport(viewportId);
-//       viewport.setVolumes([{ volumeId }]);
-//       viewport.render();
-//     });
-//   } else {
-//     renderingEngine.setViewports([
-//       {
-//         viewportId: viewportIds.stack,
-//         type: Enums.ViewportType.STACK,
-//         element: elements.stack,
-//         defaultOptions: {},
-//       },
-//     ]);
-
-//     const viewport = renderingEngine.getViewport(viewportIds.stack);
-//     await viewport.setStack(imageIds, selectedIndex);
-//     viewport.render();
-//   }
-
-//   return viewportIds;
-// }
-
-// export default function DicomViewerPage() {
-//   const params = useParams();
-//   const viewerRef = useRef({ stack: null, axial: null, sagittal: null, coronal: null });
-//   const ctToolGroupRef = useRef(null);
-//   const renderingEngineRef = useRef(null);
-//   const mainRenderingEngineRef = useRef(null);
-//   const tempElementRef = useRef(null);
-//   const [files, setFiles] = useState([]);
-//   const [selectedImageId, setSelectedImageId] = useState(null);
-//   const [tools, setTools] = useState([]);
-//   const [loading, setLoading] = useState(true);
-//   const [error, setError] = useState(null);
-//   const [visiblePreviews, setVisiblePreviews] = useState({});
-//   const [isPlaying, setIsPlaying] = useState(false);
-//   const [isMPREnabled, setIsMPREnabled] = useState(false);
-
-//   const cachedFiles = useMemo(() => {
-//     const cached = localStorage.getItem("dicomFilePaths");
-//     if (cached) {
-//       const filePaths = JSON.parse(cached);
-//       return filePaths.map((filePath, index) => ({
-//         id: `file-${index}`,
-//         path: filePath,
-//       }));
-//     }
-//     return [];
-//   }, []);
-
-//   useEffect(() => {
-//     const setupRenderingEngines = async () => {
-//       await CornerstoneLibInitialize();
-//       if (!renderingEngineRef.current) {
-//         renderingEngineRef.current = new RenderingEngine("previewEngine");
-//         tempElementRef.current = document.createElement("div");
-//         tempElementRef.current.style.position = "absolute";
-//         tempElementRef.current.style.visibility = "hidden";
-//         tempElementRef.current.style.width = "100px";
-//         tempElementRef.current.style.height = "100px";
-//         document.body.appendChild(tempElementRef.current);
-//       }
-//       if (!mainRenderingEngineRef.current) {
-//         mainRenderingEngineRef.current = new RenderingEngine("mainEngine");
-//       }
-//     };
-
-//     const loadFiles = async () => {
-//       try {
-//         setLoading(true);
-//         let fileList = cachedFiles;
-
-//         if (fileList.length === 0) {
-//           const filePaths = JSON.parse(localStorage.getItem("dicomFilePaths") || "[]");
-//           if (filePaths.length === 0) throw new Error("No files found");
-
-//           const filePromises = filePaths.map(async (filePath, index) => {
-//             const response = await fetch(`http://localhost:3000/dicom/file?path=${encodeURIComponent(filePath)}`);
-//             if (!response.ok) throw new Error("Failed to fetch file");
-//             const blob = await response.blob();
-//             return {
-//               id: `file-${index}`,
-//               url: URL.createObjectURL(blob),
-//               path: filePath,
-//             };
-//           });
-
-//           fileList = await Promise.all(filePromises);
-//         } else {
-//           const filePromises = fileList.map(async (file) => {
-//             const response = await fetch(`http://localhost:3000/dicom/file?path=${encodeURIComponent(file.path)}`);
-//             if (!response.ok) throw new Error("Failed to fetch file");
-//             const blob = await response.blob();
-//             return {
-//               ...file,
-//               url: URL.createObjectURL(blob),
-//             };
-//           });
-//           fileList = await Promise.all(filePromises);
-//         }
-
-//         console.log("Files loaded:", fileList);
-//         setFiles(fileList);
-
-//         await setupRenderingEngines();
-
-//         const processPreviewQueue = async () => {
-//           for (let i = 0; i < fileList.length; i++) {
-//             const file = fileList[i];
-//             const previewUrl = await getDicomPreview(file, renderingEngineRef.current, tempElementRef.current);
-//             if (previewUrl) {
-//               setFiles((prevFiles) =>
-//                 prevFiles.map((f) =>
-//                   f.id === file.id ? { ...f, previewUrl } : f
-//                 )
-//               );
-//               setVisiblePreviews((prev) => ({ ...prev, [file.id]: true }));
-//             } else {
-//               console.warn(`No preview generated for ${file.id}`);
-//             }
-//             await new Promise((resolve) => setTimeout(resolve, 3000));
-//           }
-//         };
-
-//         processPreviewQueue();
-
-//         setSelectedImageId(fileList.length > 0 ? fileList[0].id : null);
-//       } catch (err) {
-//         setError(err);
-//         console.error("Load error:", err);
-//       } finally {
-//         setLoading(false);
-//       }
-//     };
-
-//     loadFiles();
-
-//     return () => {
-//       if (renderingEngineRef.current) {
-//         renderingEngineRef.current.destroy();
-//         if (tempElementRef.current) document.body.removeChild(tempElementRef.current);
-//       }
-//       if (mainRenderingEngineRef.current) {
-//         mainRenderingEngineRef.current.destroy();
-//       }
-//     };
-//   }, [cachedFiles]);
-
-//   useEffect(() => {
-//     let interval;
-//     if (isPlaying && files.length > 0) {
-//       interval = setInterval(() => {
-//         setSelectedImageId((prevId) => {
-//           const currentIndex = files.findIndex((f) => f.id === prevId);
-//           const nextIndex = (currentIndex + 1) % files.length;
-//           return files[nextIndex].id;
-//         });
-//       }, 500);
-//     }
-//     return () => clearInterval(interval);
-//   }, [isPlaying, files]);
-
-//   useEffect(() => {
-//     if (selectedImageId && viewerRef.current && mainRenderingEngineRef.current) {
-//       const selectedIndex = files.findIndex((f) => f.id === selectedImageId);
-//       if (selectedIndex !== -1) {
-//         const imageIds = files.map((f) => `wadouri:${f.url}`);
-//         renderDicomImage(viewerRef.current, imageIds, selectedIndex, mainRenderingEngineRef.current, isMPREnabled).then((viewportIds) => {
-//           const tools = [
-//             WindowLevelTool,
-//             PanTool,
-//             StackScrollTool,
-//             ZoomTool,
-//             MagnifyTool,
-//             LengthTool,
-//             PlanarRotateTool,
-//             CircleROITool,
-//             RectangleROITool,
-//             HeightTool,
-//             ProbeTool,
-//             AngleTool,
-//             DragProbeTool,
-//             CobbAngleTool,
-//             ETDRSGridTool,
-//             SplineROITool,
-//             ArrowAnnotateTool,
-//             PlayTool,
-//             CrosshairsTool,
-//           ];
-
-//           tools.forEach((tool) => csTools3d.addTool(tool));
-
-//           const toolGroupId = "ctToolGroup";
-//           let ctToolGroup = ToolGroupManager.getToolGroup(toolGroupId);
-
-//           if (!ctToolGroup) {
-//             ctToolGroup = ToolGroupManager.createToolGroup(toolGroupId);
-//             tools.forEach((tool) => ctToolGroup.addTool(tool.toolName));
-//             if (isMPREnabled) {
-//               ctToolGroup.addViewport(viewportIds.axial, "mainEngine");
-//               ctToolGroup.addViewport(viewportIds.sagittal, "mainEngine");
-//               ctToolGroup.addViewport(viewportIds.coronal, "mainEngine");
-//             } else {
-//               ctToolGroup.addViewport(viewportIds.stack, "mainEngine");
-//             }
-//           } else {
-//             tools.forEach((tool) => ctToolGroup.setToolDisabled(tool.toolName));
-//           }
-
-//           setTools(tools);
-//           ctToolGroupRef.current = ctToolGroup;
-//           viewerRef.current.stack.style.opacity = isMPREnabled ? 0 : 1;
-//           viewerRef.current.axial.style.opacity = isMPREnabled ? 1 : 0;
-//           viewerRef.current.sagittal.style.opacity = isMPREnabled ? 1 : 0;
-//           viewerRef.current.coronal.style.opacity = isMPREnabled ? 1 : 0;
-//         });
-//       }
-//     }
-//   }, [selectedImageId, files, isMPREnabled]);
-
-//   const activateTool = (toolName) => {
-//     if (ctToolGroupRef.current) {
-//       tools.forEach((tool) => ctToolGroupRef.current.setToolDisabled(tool.toolName));
-//       if (toolName === "PlayTool") {
-//         ctToolGroupRef.current.setToolActive("PlayTool", {
-//           bindings: [{ mouseButton: csTools3d.Enums.MouseBindings.Primary }],
-//         });
-//       } else if (toolName === "MPR") {
-//         setIsMPREnabled(true);
-//         ctToolGroupRef.current.setToolActive("CrosshairsTool", {
-//           bindings: [{ mouseButton: csTools3d.Enums.MouseBindings.Primary }],
-//         });
-//       } else if (toolName === "CrosshairsTool") {
-//         setIsMPREnabled(true);
-//         ctToolGroupRef.current.setToolActive("CrosshairsTool", {
-//           bindings: [{ mouseButton: csTools3d.Enums.MouseBindings.Primary }],
-//         });
-//       } else {
-//         setIsMPREnabled(false);
-//         ctToolGroupRef.current.setToolActive(toolName, {
-//           bindings: [{ mouseButton: csTools3d.Enums.MouseBindings.Primary }],
-//         });
-//       }
-//     }
-//   };
-
-//   const togglePlay = () => {
-//     setIsPlaying((prev) => !prev);
-//   };
-
-//   if (loading) return <div>Loading...</div>;
-//   if (error) return <div>Error: {error.message}</div>;
-
-//   return (
-//     <div className={styles.AllCon}>
-//       <aside className={styles.aside}>
-//         <h2>Files</h2>
-//         {files.map((file) => (
-//           <div
-//             key={file.id}
-//             onClick={() => setSelectedImageId(file.id)}
-//             className={`${styles.fileSelection} ${visiblePreviews[file.id] ? styles.visible : ''}`}
-//             style={{
-//               background: selectedImageId === file.id ? "conic-gradient(#168aad, #06d6a0, #d9ed92)" : "transparent",
-//             }}
-//           >
-//             {file.previewUrl && visiblePreviews[file.id] ? (
-//               <Image
-//                 src={file.previewUrl}
-//                 width={100}
-//                 height={100}
-//                 className={styles.preview}
-//                 alt={`Preview of ${file.id}`}
-//               />
-//             ) : (
-//               <div>Loading preview...</div>
-//             )}
-//           </div>
-//         ))}
-//       </aside>
-//       <div className={styles.buttonCon}>
-//         <h1 className={styles.title}> KJ DICOM MEDICAL FILE RENDERING:</h1>
-//         <div className={styles.tools}>
-//           {tools.map((tool) => (
-//             <button
-//               key={tool.toolName}
-//               onClick={() => activateTool(tool.toolName)}
-//               className={styles.btnTool}
-//               style={{ display: tool.toolName === "CrosshairsTool" ? "none" : "inline-block" }}
-//             >
-//               {tool.toolName}
-//             </button>
-//           ))}
-//           <button
-//             onClick={() => activateTool("MPR")}
-//             className={styles.btnTool}
-//           >
-//             MPR
-//           </button>
-//           <button
-//             onClick={togglePlay}
-//             className={styles.btnTool}
-//           >
-//             {isPlaying ? "Stop" : "Play"}
-//           </button>
-//         </div>
-//         <div style={{ display: "flex", gap: "10px" }}>
-//           <div ref={(el) => (viewerRef.current.stack = el)} className={styles.viewer} style={{ width: "700px", height: "700px", display: isMPREnabled ? "none" : "block" }} />
-//           <div ref={(el) => (viewerRef.current.axial = el)} className={styles.viewer} style={{ width: "500px", height: "500px", display: isMPREnabled ? "block" : "none" }} />
-//           <div ref={(el) => (viewerRef.current.sagittal = el)} className={styles.viewer} style={{ width: "500px", height: "500px", display: isMPREnabled ? "block" : "none" }} />
-//           <div ref={(el) => (viewerRef.current.coronal = el)} className={styles.viewer} style={{ width: "500px", height: "500px", display: isMPREnabled ? "block" : "none" }} />
-//         </div>
-//       </div>
-//     </div>
-//   );
-// }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 "use client";
-import { useParams } from "next/navigation";
-import { useEffect, useRef, useState, useMemo, useCallback } from "react";
-import { RenderingEngine, Enums, volumeLoader } from "@cornerstonejs/core";
-import { init as csRenderInit } from "@cornerstonejs/core";
-import { init as dicomImageLoaderInit } from "@cornerstonejs/dicom-image-loader";
-import { init as csToolsInit, ToolGroupManager } from "@cornerstonejs/tools";
+import { useEffect, useRef, useMemo, useCallback, useReducer } from "react";
+import { RenderingEngine } from "@cornerstonejs/core";
+
+
+import { ToolGroupManager } from "@cornerstonejs/tools";
 import * as csTools3d from "@cornerstonejs/tools";
-import Image from "next/image";
+
 import styles from "./../page.module.css";
+const Image = dynamic(() => import("next/image"), { ssr: false });
 import {
   WindowLevelTool,
   PanTool,
@@ -985,212 +28,72 @@ import {
   ArrowAnnotateTool,
   CrosshairsTool,
 } from "@cornerstonejs/tools";
+import { useDicomPreviews } from "../../../../components/use_dicom_previews";
+import { CornerstoneLibInitialize } from "../../../../components/cornerstone_init";
+import { renderDicomImage } from "../../../../components/render_dicom_img";
+import { PlayTool } from "../../../../components/playtool";
+import dynamic from "next/dynamic";
 
-function useDicomPreviews(files, setFiles, setVisiblePreviews, renderingEngine, tempElement) {
-  const cachedPreviews = useMemo(() => {
-    return files.reduce((acc, file) => {
-      if (file.previewUrl) {
-        acc[file.id] = file.previewUrl;
-      }
-      return acc;
-    }, {});
-  }, [files]);
 
-  useEffect(() => {
-    const generatePreviews = async () => {
-      const previewPromises = files.map(async (file) => {
-        if (!file.previewUrl && renderingEngine && tempElement) {
-          const previewUrl = await getDicomPreview(file, renderingEngine, tempElement);
-          if (previewUrl) {
-            setFiles((prevFiles) =>
-              prevFiles.map((f) => (f.id === file.id ? { ...f, previewUrl } : f))
-            );
-            setVisiblePreviews((prev) => ({ ...prev, [file.id]: true }));
-          } else {
-            console.warn(`No preview generated for ${file.id}`);
-          }
-        }
-      });
-      await Promise.all(previewPromises);
-    };
 
-    generatePreviews();
-  }, [files, setFiles, setVisiblePreviews, renderingEngine, tempElement]);
 
-  return cachedPreviews;
-}
 
-async function getDicomPreview(file, renderingEngine, tempElement) {
-  try {
-    await CornerstoneLibInitialize();
 
-    const viewportId = "previewViewport";
-    const viewportInput = {
-      viewportId,
-      type: Enums.ViewportType.STACK,
-      element: tempElement,
-    };
 
-    if (!renderingEngine.getViewport(viewportId)) {
-      renderingEngine.enableElement(viewportInput);
-    }
 
-    const viewport = renderingEngine.getViewport(viewportId);
-    if (!viewport) throw new Error("Viewport not initialized");
 
-    const imageId = `wadouri:${file.url}`;
-    await viewport.setStack([imageId], 0);
-    viewport.render();
-
-    await new Promise((resolve) => setTimeout(resolve, 100));
-
-    const canvas = tempElement.querySelector("canvas");
-    if (!canvas || canvas.width === 0 || canvas.height === 0) {
-      throw new Error("Canvas not properly initialized or has zero size");
-    }
-
-    const fullCanvas = document.createElement("canvas");
-    fullCanvas.width = canvas.width;
-    fullCanvas.height = canvas.height;
-    const fullCtx = fullCanvas.getContext("2d");
-    fullCtx.drawImage(canvas, 0, 0);
-
-    const previewCanvas = document.createElement("canvas");
-    previewCanvas.width = 100;
-    previewCanvas.height = 100;
-    const previewCtx = previewCanvas.getContext("2d");
-    previewCtx.fillStyle = "black";
-    previewCtx.fillRect(0, 0, 100, 100);
-
-    const scaleFactor = Math.min(100 / canvas.width, 100 / canvas.height);
-    const scaledWidth = canvas.width * scaleFactor;
-    const scaledHeight = canvas.height * scaleFactor;
-    const x = (100 - scaledWidth) / 2;
-    const y = (100 - scaledHeight) / 2;
-
-    previewCtx.drawImage(fullCanvas, 0, 0, canvas.width, canvas.height, x, y, scaledWidth, scaledHeight);
-
-    const previewUrl = previewCanvas.toDataURL();
-    console.log(`Preview generated for ${file.id}: ${previewUrl ? "Success" : "Failed"}`);
-    return previewUrl;
-  } catch (error) {
-    console.error("Error generating preview for", file.id, error);
-    return null;
-  }
-}
-
-class PlayTool extends csTools3d.BaseTool {
-  constructor() {
-    super({
-      toolName: "PlayTool",
-    });
-  }
-
-  playStack(viewport, imageIds) {
-    let index = 0;
-    const playInterval = setInterval(() => {
-      if (index >= imageIds.length) index = 0;
-      viewport.setStack(imageIds, index);
-      viewport.render();
-      index++;
-    }, 500);
-    return () => clearInterval(playInterval);
-  }
-
-  mouseDownActivate(evt) {
-    const viewport = evt.detail.viewport;
-    const imageIds = viewport.getImageIds();
-    const stopPlay = this.playStack(viewport, imageIds);
-    setTimeout(stopPlay, 10000);
-  }
-}
-
-let isCornerstoneInitialized = false;
-
-async function CornerstoneLibInitialize() {
-  if (!isCornerstoneInitialized) {
-    await csRenderInit();
-    await dicomImageLoaderInit();
-    await csToolsInit();
-    isCornerstoneInitialized = true;
-  }
-}
-
-async function renderDicomImage(elements, imageIds, selectedIndex, renderingEngine, isMPREnabled) {
-  await CornerstoneLibInitialize();
-
-  const viewportIds = {
-    stack: "stackViewport",
-    axial: "axialViewport",
-    sagittal: "sagittalViewport",
-    coronal: "coronalViewport",
-  };
-
-  if (isMPREnabled) {
-    renderingEngine.setViewports([
-      {
-        viewportId: viewportIds.axial,
-        type: Enums.ViewportType.ORTHOGRAPHIC,
-        element: elements.axial,
-        defaultOptions: { orientation: Enums.OrientationAxis.AXIAL },
-      },
-      {
-        viewportId: viewportIds.sagittal,
-        type: Enums.ViewportType.ORTHOGRAPHIC,
-        element: elements.sagittal,
-        defaultOptions: { orientation: Enums.OrientationAxis.SAGITTAL },
-      },
-      {
-        viewportId: viewportIds.coronal,
-        type: Enums.ViewportType.ORTHOGRAPHIC,
-        element: elements.coronal,
-        defaultOptions: { orientation: Enums.OrientationAxis.CORONAL },
-      },
-    ]);
-
-    const volumeId = "myVolume";
-    const volume = await volumeLoader.createAndCacheVolume(volumeId, { imageIds });
-
-    Object.values(viewportIds)
-      .slice(1)
-      .forEach((viewportId) => {
-        const viewport = renderingEngine.getViewport(viewportId);
-        viewport.setVolumes([{ volumeId }]);
-        viewport.render();
-      });
-  } else {
-    renderingEngine.setViewports([
-      {
-        viewportId: viewportIds.stack,
-        type: Enums.ViewportType.STACK,
-        element: elements.stack,
-        defaultOptions: {},
-      },
-    ]);
-
-    const viewport = renderingEngine.getViewport(viewportIds.stack);
-    await viewport.setStack(imageIds, selectedIndex);
-    viewport.render();
-  }
-
-  return viewportIds;
-}
 
 export default function DicomViewerPage() {
-  const params = useParams();
+  
   const viewerRef = useRef({ stack: null, axial: null, sagittal: null, coronal: null });
   const ctToolGroupRef = useRef(null);
   const renderingEngineRef = useRef(null);
   const mainRenderingEngineRef = useRef(null);
   const tempElementRef = useRef(null);
-  const [files, setFiles] = useState([]);
-  const [selectedImageId, setSelectedImageId] = useState(null);
-  const [tools, setTools] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [visiblePreviews, setVisiblePreviews] = useState({});
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [isMPREnabled, setIsMPREnabled] = useState(false);
+
+  const initialValue = {
+    files : [],
+    selectedImageId : null,
+    tools : [],
+    loading : true,
+    error : null,
+    visiblePreviews: {},
+    isPlaying : false,
+    isMPREnabled : false,
+  };  
+  
+
+const reducer = (state, action) => {
+  switch (action.type) {
+    case "files":
+      return { ...state, files: action.payload }; 
+    case "UPDATE_PREVIEW":
+      return {
+        ...state,
+        files: state.files.map((f) => 
+          f.id === action.payload.id ? { ...f, previewUrl: action.payload.url } : f
+        ),
+        visiblePreviews: { ...state.visiblePreviews, [action.payload.id]: true }
+      };
+    case "selectedImageId":
+      return { ...state, selectedImageId: action.payload };
+    case "tools":
+      return { ...state, tools: action.payload };
+    case "loading":
+      return { ...state, loading: action.payload };
+    case "error":
+      return { ...state, error: action.payload };
+    case "visiblePreviews":
+      return { ...state, visiblePreviews: action.payload };
+    case "isPlaying":
+      return { ...state, isPlaying: typeof action.payload === 'function' ? action.payload(state.isPlaying) : action.payload };
+    case "isMPREnabled":
+      return { ...state, isMPREnabled: action.payload };
+    default:
+      return state;
+  }
+};
+  const [cr_config, dispatch] = useReducer(reducer, initialValue);
 
   const cachedFiles = useMemo(() => {
     const cached = localStorage.getItem("dicomFilePaths");
@@ -1204,11 +107,13 @@ export default function DicomViewerPage() {
     return [];
   }, []);
 
-  const handleSelectImage = useCallback((id) => {
-    setSelectedImageId(id);
+  const handleSelectImage = useCallback((id) => { 
+    
+    dispatch({ type: "selectedImageId", payload: id });
+    
   }, []);
-
-  const previews = useDicomPreviews(files, setFiles, setVisiblePreviews, renderingEngineRef.current, tempElementRef.current);
+  
+  const previews = useDicomPreviews(cr_config.files, dispatch, renderingEngineRef.current, tempElementRef.current);
 
   useEffect(() => {
     const setupRenderingEngines = async () => {
@@ -1229,7 +134,9 @@ export default function DicomViewerPage() {
 
     const loadFiles = async () => {
       try {
-        setLoading(true);
+        
+        dispatch({ type: "loading", payload: true });
+        
         let fileList = cachedFiles;
 
         if (fileList.length === 0) {
@@ -1260,16 +167,14 @@ export default function DicomViewerPage() {
           });
           fileList = await Promise.all(filePromises);
         }
-
-        setFiles(fileList);
-        setSelectedImageId(fileList.length > 0 ? fileList[0].id : null);
-
+        dispatch({ type: "files", payload: fileList });
+        dispatch({ type: "selectedImageId", payload: fileList.length > 0 ? fileList[0].id : null });
         await setupRenderingEngines();
       } catch (err) {
-        setError(err);
-        console.error("Load error:", err);
+        dispatch({ type: "error", payload: err });
+        
       } finally {
-        setLoading(false);
+        dispatch({ type: "loading", payload: false });
       }
     };
 
@@ -1288,24 +193,25 @@ export default function DicomViewerPage() {
 
   useEffect(() => {
     let interval;
-    if (isPlaying && files.length > 0) {
+    if (cr_config.isPlaying && cr_config.files.length > 0) {
       interval = setInterval(() => {
-        setSelectedImageId((prevId) => {
+        
+        dispatch({ type: "selectedImageId", payload: (prevId) => {
           const currentIndex = files.findIndex((f) => f.id === prevId);
           const nextIndex = (currentIndex + 1) % files.length;
           return files[nextIndex].id;
-        });
+        } });
       }, 500);
     }
     return () => clearInterval(interval);
-  }, [isPlaying, files]);
+  }, [cr_config.isPlaying, cr_config.files]);
 
   useEffect(() => {
-    if (selectedImageId && viewerRef.current && mainRenderingEngineRef.current) {
-      const selectedIndex = files.findIndex((f) => f.id === selectedImageId);
+    if (cr_config.selectedImageId && viewerRef.current && mainRenderingEngineRef.current) {
+      const selectedIndex = cr_config.files.findIndex((f) => f.id === cr_config.selectedImageId);
       if (selectedIndex !== -1) {
-        const imageIds = files.map((f) => `wadouri:${f.url}`);
-        renderDicomImage(viewerRef.current, imageIds, selectedIndex, mainRenderingEngineRef.current, isMPREnabled).then(
+        const imageIds = cr_config.files.map((f) => `wadouri:${f.url}`);
+        renderDicomImage(viewerRef.current, imageIds, selectedIndex, mainRenderingEngineRef.current, cr_config.isMPREnabled).then(
           (viewportIds) => {
             const tools = [
               WindowLevelTool,
@@ -1331,7 +237,7 @@ export default function DicomViewerPage() {
 
             tools.forEach((tool) => {
               csTools3d.addTool(tool);
-              console.log(`Tool added to Cornerstone: ${tool.toolName}`);
+              
             });
 
             const toolGroupId = "ctToolGroup";
@@ -1341,10 +247,10 @@ export default function DicomViewerPage() {
               ctToolGroup = ToolGroupManager.createToolGroup(toolGroupId);
               tools.forEach((tool) => {
                 ctToolGroup.addTool(tool.toolName);
-                console.log(`Tool added to ToolGroup: ${tool.toolName}`);
+                
               });
 
-              if (isMPREnabled) {
+              if (cr_config.isMPREnabled) {
                 ctToolGroup.addViewport(viewportIds.axial, "mainEngine");
                 ctToolGroup.addViewport(viewportIds.sagittal, "mainEngine");
                 ctToolGroup.addViewport(viewportIds.coronal, "mainEngine");
@@ -1357,7 +263,7 @@ export default function DicomViewerPage() {
               });
             } else {
               tools.forEach((tool) => ctToolGroup.setToolDisabled(tool.toolName));
-              if (isMPREnabled) {
+              if (cr_config.isMPREnabled) {
                 ctToolGroup.addViewport(viewportIds.axial, "mainEngine");
                 ctToolGroup.addViewport(viewportIds.sagittal, "mainEngine");
                 ctToolGroup.addViewport(viewportIds.coronal, "mainEngine");
@@ -1365,19 +271,19 @@ export default function DicomViewerPage() {
                 ctToolGroup.addViewport(viewportIds.stack, "mainEngine");
               }
             }
-
-            setTools(tools);
+            dispatch({ type: "tools", payload: tools });
+            
             ctToolGroupRef.current = ctToolGroup;
 
-            viewerRef.current.stack.style.opacity = isMPREnabled ? 0 : 1;
-            viewerRef.current.axial.style.opacity = isMPREnabled ? 1 : 0;
-            viewerRef.current.sagittal.style.opacity = isMPREnabled ? 1 : 0;
-            viewerRef.current.coronal.style.opacity = isMPREnabled ? 1 : 0;
+            viewerRef.current.stack.style.opacity = cr_config.isMPREnabled ? 0 : 1;
+            viewerRef.current.axial.style.opacity = cr_config.isMPREnabled ? 1 : 0;
+            viewerRef.current.sagittal.style.opacity = cr_config.isMPREnabled ? 1 : 0;
+            viewerRef.current.coronal.style.opacity = cr_config.isMPREnabled ? 1 : 0;
           }
         );
       }
     }
-  }, [selectedImageId, files, isMPREnabled]);
+  }, [cr_config.selectedImageId, cr_config.files, cr_config.isMPREnabled]);
 
   const getToolBindings = (toolName) => {
     switch (toolName) {
@@ -1400,16 +306,16 @@ export default function DicomViewerPage() {
 
   const activateTool = (toolName) => {
     if (ctToolGroupRef.current) {
-      console.log(`Activating tool: ${toolName}`);
+  
 
-      tools.forEach((tool) => ctToolGroupRef.current.setToolDisabled(tool.toolName));
+      cr_config.tools.forEach((tool) => ctToolGroupRef.current.setToolDisabled(tool.toolName));
 
       const bindings = getToolBindings(toolName);
 
       if (toolName === "MPR") {
-        setIsMPREnabled(true);
+        dispatch({ type: "isMPREnabled", payload: true });
         if (!ctToolGroupRef.current.hasTool("CrosshairsTool")) {
-          console.log("CrosshairsTool not found, adding it now...");
+          
           csTools3d.addTool(CrosshairsTool);
           ctToolGroupRef.current.addTool(CrosshairsTool.toolName);
         }
@@ -1417,49 +323,50 @@ export default function DicomViewerPage() {
           bindings: [{ mouseButton: csTools3d.Enums.MouseBindings.Primary }],
         });
       } else if (toolName === "CrosshairsTool") {
-        setIsMPREnabled(true);
+        dispatch({ type: "isMPREnabled", payload: true });
         if (!ctToolGroupRef.current.hasTool("CrosshairsTool")) {
-          console.log("CrosshairsTool not found, adding it now...");
+          
           csTools3d.addTool(CrosshairsTool);
           ctToolGroupRef.current.addTool(CrosshairsTool.toolName);
         }
         ctToolGroupRef.current.setToolActive("CrosshairsTool", { bindings });
       } else {
-        setIsMPREnabled(false);
+        dispatch({ type: "isMPREnabled", payload: false });
         if (!ctToolGroupRef.current.hasTool(toolName)) {
-          console.error(`${toolName} is not added to ToolGroup! Adding it now...`);
+          
           ctToolGroupRef.current.addTool(toolName);
         }
         ctToolGroupRef.current.setToolActive(toolName, { bindings });
       }
     } else {
-      console.error("ToolGroup not initialized!");
+      
     }
   };
 
   const togglePlay = () => {
-    setIsPlaying((prev) => !prev);
+    dispatch({ type: "isPlaying", payload: (prev) => !prev });
   };
 
-  if (loading) return <div>Loading...</div>;
-  if (error) return <div>Error: {error.message}</div>;
+  if (cr_config.loading) return <div>Loading...</div>;
+  if (cr_config.error) return <div>Error: {cr_config.error.message}</div>;
 
   return (
     <div className={styles.AllCon}>
       <aside className={styles.aside}>
         <h2>Files</h2>
-        {files.map((file) => (
+        {cr_config.files.map((file) => (
           <div
             key={file.id}
             onClick={() => handleSelectImage(file.id)}
-            className={`${styles.fileSelection} ${visiblePreviews[file.id] ? styles.visible : ""}`}
+            className={`${styles.fileSelection} ${cr_config.visiblePreviews[file.id] ? styles.visible : ""}`}
             style={{
-              background: selectedImageId === file.id ? "conic-gradient(#168aad, #06d6a0, #d9ed92)" : "transparent",
+              background: cr_config.selectedImageId === file.id ? "conic-gradient(#168aad, #06d6a0, #d9ed92)" : "transparent",
             }}
           >
-            {file.previewUrl && visiblePreviews[file.id] ? (
+            {file.previewUrl && cr_config.visiblePreviews[file.id] ? (
               <Image
                 src={file.previewUrl}
+                
                 width={100}
                 height={100}
                 className={styles.preview}
@@ -1475,7 +382,7 @@ export default function DicomViewerPage() {
       <div className={styles.buttonCon}>
         <h1 className={styles.title}>DICOM MEDICAL FILE:</h1>
         <div className={styles.tools}>
-          {tools.map((tool) => (
+          {cr_config.tools.map((tool) => (
             <button
               key={tool.toolName}
               onClick={() => activateTool(tool.toolName)}
@@ -1489,29 +396,29 @@ export default function DicomViewerPage() {
             MPR
           </button>
           <button onClick={togglePlay} className={styles.btnTool}>
-            {isPlaying ? "Stop" : "Play"}
+            {cr_config.isPlaying ? "Stop" : "Play"}
           </button>
         </div>
         <div style={{ display: "flex", gap: "10px" }}>
           <div
             ref={(el) => (viewerRef.current.stack = el)}
             className={styles.viewer}
-            style={{ width: "650px", height: "650px", display: isMPREnabled ? "none" : "block" }}
+            style={{ width: "650px", height: "650px", display: cr_config.isMPREnabled ? "none" : "block" }}
           />
           <div
             ref={(el) => (viewerRef.current.axial = el)}
             className={styles.viewer}
-            style={{ width: "400px", height: "400px", display: isMPREnabled ? "block" : "none" }}
+            style={{ width: "400px", height: "400px", display: cr_config.isMPREnabled ? "block" : "none" }}
           />
           <div
             ref={(el) => (viewerRef.current.sagittal = el)}
             className={styles.viewer}
-            style={{ width: "400px", height: "400px", display: isMPREnabled ? "block" : "none" }}
+            style={{ width: "400px", height: "400px", display: cr_config.isMPREnabled ? "block" : "none" }}
           />
           <div
             ref={(el) => (viewerRef.current.coronal = el)}
             className={styles.viewer}
-            style={{ width: "400px", height: "400px", display: isMPREnabled ? "block" : "none" }}
+            style={{ width: "400px", height: "400px", display: cr_config.isMPREnabled ? "block" : "none" }}
           />
         </div>
       </div>
